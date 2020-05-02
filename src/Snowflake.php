@@ -67,7 +67,7 @@ final class Snowflake
     public function __construct(?Application $app)
     {
         $config = $app->config['snowflake'] ?? config('snowflake');
-        $this->twEpoch = $config['tw_epoch'];
+        $this->twEpoch = strtotime($config['tw_epoch']) * 1000;
         $this->workerIdBits = $config['worker_id_bits'];
         $this->maxWorkerId = -1 ^ (-1 << $this->workerIdBits);
         $this->dataCenterIdBits = $config['data_center_id_bits'];
