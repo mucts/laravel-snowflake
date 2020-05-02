@@ -96,7 +96,7 @@ final class Snowflake
      * @return int
      * @throws Exception
      */
-    public function nextId()
+    public function next()
     {
         return Cache::lock($this->lockKey)->get(function () {
             $timestamp = $this->timeGen();
