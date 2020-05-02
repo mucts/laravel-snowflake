@@ -10,6 +10,7 @@
         "ext-bcmath": "^7.4",
         "laravel/framework": "^7.0"
     },
+    "keywords": ["snowflake", "laravel-snowflake", "laravel"],
     "require-dev": {
         "phpunit/phpunit": "^9.0"
     },
