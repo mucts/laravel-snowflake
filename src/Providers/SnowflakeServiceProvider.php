@@ -1,10 +1,21 @@
 <?php
+/**
+ * 雪花算法 Provider
+ *
+ * @author herry@<yuandeng@aliyun.com>
+ * @version 1.0
+ * @copyright © 2020 MuCTS.com All Rights Reserved.
+ */
 
 namespace MuCTS\LaravelSnowflake\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use MuCTS\LaravelSnowflake\Snowflake;
 
+/**
+ * Class SnowflakeServiceProvider
+ * @package MuCTS\LaravelSnowflake\Providers
+ */
 class SnowflakeServiceProvider extends ServiceProvider
 {
     public function register()
