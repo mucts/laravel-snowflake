@@ -24,7 +24,7 @@ class SnowflakeServiceProvider extends ServiceProvider
             dirname(__DIR__) . '/../config/snowflake.php', 'snowflake'
         );
         $this->app->singleton('snowflake', function ($app) {
-            return new Snowflake($app);
+            return new Snowflake($app->config['snowflake']);
         });
     }
 

@@ -20,7 +20,6 @@
 namespace MuCTS\LaravelSnowflake;
 
 use Exception;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -68,12 +67,12 @@ final class Snowflake
 
     /**
      * 构造函数
-     * @param Application|null $app
+     * @param array|null $config
      * @throws Exception
      */
-    public function __construct(?Application $app)
+    public function __construct(?array $config = null)
     {
-        $config = $app->config['snowflake'] ?? config('snowflake');
+        $config = $config ?? config('snowflake');
         $this->twEpoch = strtotime($config['tw_epoch']) * 1000;
         $this->workerIdBits = $config['worker_id_bits'];
         $this->maxWorkerId = -1 ^ (-1 << $this->workerIdBits);
@@ -100,10 +99,10 @@ final class Snowflake
 
     /**
      * 获得下一个ID (该方法是线程安全的)
-     * @return int
+     * @return string
      * @throws Exception
      */
-    public function next()
+    public function next(): ?string
     {
         return Cache::lock($this->lockKey)->get(function () {
             $timestamp = $this->timeGen();
@@ -173,7 +172,7 @@ final class Snowflake
      * @param int $lastTimestamp 上次生成ID的时间截
      * @return int 当前时间戳
      */
-    protected function tilNextMillis($lastTimestamp)
+    protected function tilNextMillis(int $lastTimestamp): int
     {
         $timestamp = $this->timeGen();
         while ($timestamp <= $lastTimestamp) {
@@ -191,7 +190,7 @@ final class Snowflake
         return microtime(true) * 1000;
     }
 
-    protected function leftShift($a, $b)
+    protected function leftShift(int $a, int $b): string
     {
         return bcmul($a, bcpow(2, $b));
     }
