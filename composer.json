@@ -23,16 +23,16 @@
     ],
     "autoload": {
         "psr-4": {
-            "MuCTS\\LaravelSnowflake\\": "src/"
+            "MuCTS\\Laravel\\Snowflake\\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "MuCTS\\LaravelSnowflake\\Providers\\SnowflakeServiceProvider"
+                "MuCTS\\Laravel\\Snowflake\\Providers\\SnowflakeServiceProvider"
             ],
             "aliases": {
-                "Snowflake": "MuCTS\\LaravelSnowflake\\Facades\\Snowflake"
+                "Snowflake": "MuCTS\\Laravel\\Snowflake\\Facades\\Snowflake"
             }
         }
     }

@@ -7,7 +7,7 @@
  * @copyright © 2020 MuCTS.com All Rights Reserved.
  */
 
-namespace MuCTS\LaravelSnowflake\Facades;
+namespace MuCTS\Laravel\Snowflake\Facades;
 
 
 use Illuminate\Support\Facades\Facade;
@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Facade;
  * Class Snowflake
  *
  * @method static string next()
- * @package MuCTS\LaravelSnowflake\Facades
+ * @package MuCTS\Laravel\Snowflake\Facades
  */
 class Snowflake extends Facade
 {

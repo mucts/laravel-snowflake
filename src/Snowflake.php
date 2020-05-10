@@ -17,14 +17,14 @@
  * @copyright © 2020 MuCTS.com All Rights Reserved.
  */
 
-namespace MuCTS\LaravelSnowflake;
+namespace MuCTS\Laravel\Snowflake;
 
 use Exception;
 use Illuminate\Support\Facades\Cache;
 
 /**
  * Class Snowflake
- * @package MuCTS\LaravelSnowflake
+ * @package MuCTS\Laravel\Snowflake
  */
 final class Snowflake
 {

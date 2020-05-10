@@ -7,14 +7,14 @@
  * @copyright © 2020 MuCTS.com All Rights Reserved.
  */
 
-namespace MuCTS\LaravelSnowflake\Providers;
+namespace MuCTS\Laravel\Snowflake\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use MuCTS\LaravelSnowflake\Snowflake;
+use MuCTS\Laravel\Snowflake\Snowflake;
 
 /**
  * Class SnowflakeServiceProvider
- * @package MuCTS\LaravelSnowflake\Providers
+ * @package MuCTS\Laravel\Snowflake\Providers
  */
 class SnowflakeServiceProvider extends ServiceProvider
 {

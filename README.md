@@ -13,14 +13,14 @@ Generate snowflake identifier
 $id = Snowflake::next();
 ```
 # Usage with Eloquent
-Add the `Mucts\LaravelSnowflake\Snowflake` trait to your Eloquent model.
+Add the `MuCTS\Laravel\Snowflake\Snowflake` trait to your Eloquent model.
 This trait make type `snowflake` of primary key. Trait will automatically set $incrementing property to false.
 
 ``` php
 <?php
 namespace App;
 
-use Mucts\LaravelSnowflake\Snowflake;
+use MuCTS\Laravel\Snowflake\Snowflake;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 

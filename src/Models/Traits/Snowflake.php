@@ -7,14 +7,14 @@
  * @copyright © 2020 MuCTS.com All Rights Reserved.
  */
 
-namespace MuCTS\LaravelSnowflake\Models\Traits;
+namespace MuCTS\Laravel\Snowflake\Models\Traits;
 
 
-use MuCTS\LaravelSnowflake\Facades\Snowflake as SnowflakeFacade;
+use MuCTS\Laravel\Snowflake\Facades\Snowflake as SnowflakeFacade;
 
 /**
  * Trait Snowflake
- * @package MuCTS\LaravelSnowflake\Models\Traits
+ * @package MuCTS\Laravel\Snowflake\Models\Traits
  */
 trait Snowflake
 {
