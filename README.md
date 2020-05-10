@@ -1,6 +1,6 @@
 # Laravel Snowflake
 
-This Laravel package to generate 64 bit identifier like the snowflake within Twitter.
+> This Laravel package to generate 64 bit identifier like the snowflake within Twitter.
 
 # Laravel Installation
 ```
@@ -13,14 +13,14 @@ Generate snowflake identifier
 $id = Snowflake::next();
 ```
 # Usage with Eloquent
-Add the `MuCTS\Laravel\Snowflake\Snowflake` trait to your Eloquent model.
+Add the `MuCTS\LaravelSnowflake\Models\Traits\Snowflake` trait to your Eloquent model.
 This trait make type `snowflake` of primary key. Trait will automatically set $incrementing property to false.
 
 ``` php
 <?php
 namespace App;
 
-use MuCTS\Laravel\Snowflake\Snowflake;
+use MuCTS\LaravelSnowflake\Models\Traits\Snowflake;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
