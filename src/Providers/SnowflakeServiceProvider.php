@@ -9,6 +9,7 @@
 
 namespace MuCTS\Laravel\Snowflake\Providers;
 
+use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 use MuCTS\Laravel\Snowflake\Snowflake;
 
@@ -16,7 +17,7 @@ use MuCTS\Laravel\Snowflake\Snowflake;
  * Class SnowflakeServiceProvider
  * @package MuCTS\Laravel\Snowflake\Providers
  */
-class SnowflakeServiceProvider extends ServiceProvider
+class SnowflakeServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     public function register()
     {
