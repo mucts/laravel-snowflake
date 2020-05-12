@@ -19,6 +19,7 @@
 
 namespace MuCTS\Laravel\Snowflake;
 
+use DateInterval;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 
@@ -114,11 +115,11 @@ final class Snowflake
             }
 
             // 如果是同一时间生成的，则进行毫秒内序列
-            $sequence = $this->getSequence($timestamp);
+            $sequence = $this->getSequence();
             // 毫秒内序列溢出，阻塞到下一个毫秒,获得新的时间戳
             while ($this->getLastTimestamp() == $timestamp && $sequence == 0) {
                 $timestamp = $this->tilNextMillis($timestamp);
-                $sequence = $this->getSequence($timestamp);
+                $sequence = $this->getSequence();
             }
 
             //上次生成ID的时间截
@@ -154,16 +155,16 @@ final class Snowflake
 
     /**
      * 毫秒内序列(0~4095)
-     * @param int $timestamp
      * @return int
      */
-    private function getSequence(int $timestamp): int
+    private function getSequence(): int
     {
-        $sequence = Cache::remember($this->sequenceKey, $timestamp, function () {
+        $dateInterval = new DateInterval('PT1F');
+        $sequence = Cache::remember($this->sequenceKey, $dateInterval, function () {
             return -1;
         });
         $sequence = ($sequence + 1) & $this->sequenceMask;
-        Cache::put($sequence, $sequence, $timestamp);
+        Cache::put($sequence, $sequence, $dateInterval);
         return $sequence;
     }
 
