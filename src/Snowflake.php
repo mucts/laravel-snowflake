@@ -19,8 +19,8 @@
 
 namespace MuCTS\Laravel\Snowflake;
 
-use DateInterval;
 use Exception;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -159,12 +159,12 @@ final class Snowflake
      */
     private function getSequence(): int
     {
-        $dateInterval = new DateInterval('PT1F');
-        $sequence = Cache::remember($this->sequenceKey, $dateInterval, function () {
+        $tts = Carbon::now()->addMicroseconds();
+        $sequence = Cache::remember($this->sequenceKey, $tts, function () {
             return -1;
         });
         $sequence = ($sequence + 1) & $this->sequenceMask;
-        Cache::put($sequence, $sequence, $dateInterval);
+        Cache::put($this->sequenceKey, $sequence, $tts);
         return $sequence;
     }
 
