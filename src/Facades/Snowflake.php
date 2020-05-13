@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Facade;
  * Class Snowflake
  *
  * @method static string next()
+ * @method static \Illuminate\Support\Collection info(string $snowflakeId)
  * @method static \MuCTS\Laravel\Snowflake\Snowflake setTwEpoch($twEpoch)
  * @method static \MuCTS\Laravel\Snowflake\Snowflake setWorkerIdBits(?int $workerIdBits)
  * @method static \MuCTS\Laravel\Snowflake\Snowflake setDataCenterIdBits(?int $dataCenterIdBits)

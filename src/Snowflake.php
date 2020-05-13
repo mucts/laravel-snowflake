@@ -21,10 +21,9 @@ namespace MuCTS\Laravel\Snowflake;
 
 use DateTime;
 use Exception;
-use Illuminate\Support\Carbon as ICarbon;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use MuCTS\Support\Carbon;
 
 /**
  * Class Snowflake
@@ -88,15 +87,13 @@ final class Snowflake
     /**
      * Set snowflake start epoch carbon
      *
-     * @param Carbon|ICarbon|DateTime|int|string $twEpoch
+     * @param Carbon|DateTime|int|string $twEpoch
      * @return $this
      */
     public function setTwEpoch($twEpoch): self
     {
         if ($twEpoch instanceof DateTime) {
             $twEpoch = Carbon::createFromTimestamp($twEpoch->getTimestamp())->setMillisecond(0);
-        } elseif ($twEpoch instanceof ICarbon) {
-            $twEpoch = Carbon::createFromTimestamp($twEpoch->getTimestamp())->setMillisecond($twEpoch->millisecond);
         } elseif (is_int($twEpoch)) {
             $twEpoch = Carbon::createFromTimestampMs($twEpoch);
         } elseif (is_string($twEpoch)) {
@@ -209,7 +206,7 @@ final class Snowflake
             //上次生成ID的时间截
             $this->setLastTimestamp($timestamp);
 
-            $gmpTimestamp = gmp_init($this->leftShift(bcsub($timestamp, $this->twEpoch->getTimestampMs()), $this->timestampLeftShift));
+            $gmpTimestamp = gmp_init($this->leftShift($timestamp->diffInMilliseconds($this->twEpoch), $this->timestampLeftShift));
             $gmpDataCenterId = gmp_init($this->leftShift($this->dataCenterId, $this->dataCenterIdShift));
             $gmpWorkerId = gmp_init($this->leftShift($this->workerId, $this->workerIdShift));
             $gmpSequence = gmp_init($sequence);
@@ -219,7 +216,7 @@ final class Snowflake
     }
 
     /**
-     * Get parse info
+     * 解析ID信息
      *
      * @param string $snowflakeId
      * @return Collection
@@ -231,15 +228,15 @@ final class Snowflake
         $sequenceStart = $len < $this->workerIdShift ? 0 : $len - $this->workerIdShift;
         $workerStart = $len < $this->dataCenterIdShift ? 0 : $len - $this->dataCenterIdShift;
         $timeStart = $len < $this->timestampLeftShift ? 0 : $len - $this->timestampLeftShift;
-        $sequence = substr($snowflakeId, $sequenceStart, $len);
-        $workerId = $sequenceStart == 0 ? 0 : substr($snowflakeId, $workerStart, $sequenceStart);
-        $dataCenterId = $workerStart == 0 ? 0 : substr($snowflakeId, $timeStart, $workerStart);
+        $sequence = substr($snowflakeId, $sequenceStart);
+        $workerId = $sequenceStart == 0 ? 0 : substr($snowflakeId, $workerStart, $sequenceStart - $workerStart);
+        $dataCenterId = $workerStart == 0 ? 0 : substr($snowflakeId, $timeStart, $workerStart - $timeStart);
         $time = $timeStart == 0 ? 0 : substr($snowflakeId, 0, $timeStart);
-        $items = collect(['snowflake_id' => $snowflakeId]);
-        $items->put('sequence', gmp_init($sequence));
-        $items->put('worker_id', gmp_init($workerId));
-        $items->put('data_center_id', gmp_init($dataCenterId));
-        $items->put('datetime', Carbon::createFromTimestampMs(bcadd(gmp_init($time), $this->twEpoch->getTimestampMs())));
+        $items = collect(['snowflake_id' => gmp_strval('0b' . $snowflakeId)]);
+        $items->put('sequence', gmp_intval(gmp_init('0b' . $sequence)));
+        $items->put('worker_id', gmp_intval(gmp_init('0b' . $workerId)));
+        $items->put('data_center_id', gmp_intval(gmp_init('0b' . $dataCenterId)));
+        $items->put('datetime', $this->twEpoch->clone()->addMilliseconds(gmp_intval(gmp_init('0b' . $time)))->toDateTimeString());
         return $items;
     }
 
@@ -250,6 +247,7 @@ final class Snowflake
      */
     private function getLastTimestamp(): ?Carbon
     {
+        Cache::forget($this->lastTimestampKey);
         return Cache::rememberForever($this->lastTimestampKey, function () {
             return null;
         });
