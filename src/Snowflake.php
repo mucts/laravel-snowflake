@@ -236,7 +236,7 @@ final class Snowflake
         $items->put('sequence', gmp_intval(gmp_init('0b' . $sequence)));
         $items->put('worker_id', gmp_intval(gmp_init('0b' . $workerId)));
         $items->put('data_center_id', gmp_intval(gmp_init('0b' . $dataCenterId)));
-        $items->put('datetime', $this->twEpoch->clone()->addMilliseconds(gmp_intval(gmp_init('0b' . $time)))->toDateTimeString());
+        $items->put('datetime', $this->twEpoch->clone()->addMilliseconds(gmp_intval(gmp_init('0b' . $time))));
         return $items;
     }
 
