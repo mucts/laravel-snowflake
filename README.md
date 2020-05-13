@@ -9,9 +9,15 @@ composer require "mucts/laravel-snowflake"
 ```
 
 Generate snowflake identifier
-```
+```php
 $id = Snowflake::next();
 ```
+
+Analysis snowflake identifier
+```php
+$info = Snowflake::info($id);
+```
+
 # Usage with Eloquent
 Add the `MuCTS\LaravelSnowflake\Models\Traits\Snowflake` trait to your Eloquent model.
 This trait make type `snowflake` of primary key. Trait will automatically set $incrementing property to false.
