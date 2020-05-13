@@ -9,7 +9,8 @@
         "ext-openssl": "^7.4",
         "ext-gmp": "^7.4",
         "ext-bcmath": "^7.4",
-        "laravel/framework": "^7.0"
+        "laravel/framework": "^7.0",
+        "mucts/support": "^1.0"
     },
     "keywords": ["snowflake", "laravel-snowflake", "laravel"],
     "require-dev": {

@@ -19,9 +19,12 @@
 
 namespace MuCTS\Laravel\Snowflake;
 
+use DateTime;
 use Exception;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Carbon as ICarbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use MuCTS\Support\Carbon;
 
 /**
  * Class Snowflake
@@ -29,8 +32,8 @@ use Illuminate\Support\Facades\Cache;
  */
 final class Snowflake
 {
-    /** 开始时间截 (2020-01-01) */
-    private int $twEpoch;
+    /** @var Carbon 开始时间截 (2020-01-01) */
+    private Carbon $twEpoch;
 
     /** 机器id所占的位数 */
     private int $workerIdBits;
@@ -43,7 +46,6 @@ final class Snowflake
 
     /** 支持的最大数据标识id，结果是31 */
     private int $maxDataCenterId;
-
 
     /** 序列在id中占的位数 */
     private int $sequenceBits;
@@ -74,26 +76,108 @@ final class Snowflake
     public function __construct(?array $config = null)
     {
         $config = $config ?? config('snowflake');
-        $this->twEpoch = strtotime($config['tw_epoch']) * 1000;
-        $this->workerIdBits = $config['worker_id_bits'];
+        $this->setTwEpoch($config['tw_epoch']);
+        $this->setWorkerIdBits($config['worker_id_bits']);
+        $this->setDataCenterIdBits($config['data_center_id_bits']);
+        $this->setSequenceBits($config['sequence_bits']);
+
+        $this->setWorkerId($config['worker_id']);
+        $this->setDataCenterId($config['data_center_id']);
+    }
+
+    /**
+     * Set snowflake start epoch carbon
+     *
+     * @param Carbon|ICarbon|DateTime|int|string $twEpoch
+     * @return $this
+     */
+    public function setTwEpoch($twEpoch): self
+    {
+        if ($twEpoch instanceof DateTime) {
+            $twEpoch = Carbon::createFromTimestamp($twEpoch->getTimestamp())->setMillisecond(0);
+        } elseif ($twEpoch instanceof ICarbon) {
+            $twEpoch = Carbon::createFromTimestamp($twEpoch->getTimestamp())->setMillisecond($twEpoch->millisecond);
+        } elseif (is_int($twEpoch)) {
+            $twEpoch = Carbon::createFromTimestampMs($twEpoch);
+        } elseif (is_string($twEpoch)) {
+            $twEpoch = Carbon::parse($twEpoch);
+        }
+        $this->twEpoch = $twEpoch;
+        return $this;
+    }
+
+    /**
+     * Set worker id bits
+     *
+     * @param int $workerIdBits
+     * @return $this
+     */
+    public function setWorkerIdBits(?int $workerIdBits): self
+    {
+        $this->workerIdBits = $workerIdBits ?? 5;
         $this->maxWorkerId = -1 ^ (-1 << $this->workerIdBits);
-        $this->dataCenterIdBits = $config['data_center_id_bits'];
+        return $this;
+    }
+
+    /**
+     * Set data center id bits
+     *
+     * @param int|null $dataCenterIdBits
+     * @return $this
+     */
+    public function setDataCenterIdBits(?int $dataCenterIdBits): self
+    {
+        $this->dataCenterIdBits = $dataCenterIdBits ?? 5;
         $this->maxDataCenterId = -1 ^ (-1 << $this->dataCenterIdBits);
-        $this->sequenceBits = $config['sequence_bits'];
+        return $this;
+    }
+
+    /**
+     * Set sequence bits
+     *
+     * @param int|null $sequenceBits
+     * @return $this
+     */
+    public function setSequenceBits(?int $sequenceBits): self
+    {
+        $this->sequenceBits = $sequenceBits ?? 12;
         $this->workerIdShift = $this->sequenceBits;
         $this->dataCenterIdShift = $this->sequenceBits + $this->workerIdBits;
         $this->timestampLeftShift = $this->sequenceBits + $this->workerIdBits + $this->dataCenterIdBits;
         $this->sequenceMask = -1 ^ (-1 << $this->sequenceBits);
+        return $this;
+    }
 
-        $this->workerId = $config['worker_id'];
-        $this->dataCenterId = $config['data_center_id'];
-
-
+    /**
+     * Set worker id
+     *
+     * @param int|null $workerId
+     * @return $this
+     * @throws Exception
+     */
+    public function setWorkerId(?int $workerId): self
+    {
+        $this->workerId = $workerId ?? 1;
         if ($this->workerId > $this->maxWorkerId || $this->workerId < 0) {
             throw new Exception(sprintf('worker Id can\'t be greater than %d or less than 0', $this->maxWorkerId));
-        } elseif ($this->dataCenterId > $this->maxDataCenterId || $this->dataCenterId < 0) {
+        }
+        return $this;
+    }
+
+    /**
+     * Set data center id
+     *
+     * @param int|null $dataCenterId
+     * @return $this
+     * @throws Exception
+     */
+    public function setDataCenterId(?int $dataCenterId): self
+    {
+        $this->dataCenterId = $dataCenterId ?? 1;
+        if ($this->dataCenterId > $this->maxDataCenterId || $this->dataCenterId < 0) {
             throw new Exception(sprintf('data center Id can\'t be greater than %d or less than 0', $this->maxDataCenterId));
         }
+        return $this;
     }
 
     private string $lockKey = 'MCTS:SF:LOCK';
@@ -109,23 +193,23 @@ final class Snowflake
             $timestamp = $this->timeGen();
 
             // 如果当前时间小于上一次ID生成的时间戳，说明系统时钟回退过这个时候应当抛出异常
-            if ($timestamp < $this->getLastTimestamp()) {
+            if ($timestamp->lt($this->getLastTimestamp())) {
                 throw new Exception(
                     sprintf("Clock moved backwards.  Refusing to generate id for %d milliseconds", $this->getLastTimestamp() - $timestamp));
             }
 
             // 如果是同一时间生成的，则进行毫秒内序列
-            $sequence = $this->getSequence();
+            $sequence = $this->getSequence($timestamp);
             // 毫秒内序列溢出，阻塞到下一个毫秒,获得新的时间戳
-            while ($this->getLastTimestamp() == $timestamp && $sequence == 0) {
+            while ($timestamp->eq($this->getLastTimestamp()) && $sequence == 0) {
                 $timestamp = $this->tilNextMillis($timestamp);
-                $sequence = $this->getSequence();
+                $sequence = $this->getSequence($timestamp);
             }
 
             //上次生成ID的时间截
             $this->setLastTimestamp($timestamp);
 
-            $gmpTimestamp = gmp_init($this->leftShift(bcsub($timestamp, $this->twEpoch), $this->timestampLeftShift));
+            $gmpTimestamp = gmp_init($this->leftShift(bcsub($timestamp, $this->twEpoch->getTimestampMs()), $this->timestampLeftShift));
             $gmpDataCenterId = gmp_init($this->leftShift($this->dataCenterId, $this->dataCenterIdShift));
             $gmpWorkerId = gmp_init($this->leftShift($this->workerId, $this->workerIdShift));
             $gmpSequence = gmp_init($sequence);
@@ -134,32 +218,59 @@ final class Snowflake
         });
     }
 
+    /**
+     * Get parse info
+     *
+     * @param string $snowflakeId
+     * @return Collection
+     */
+    public function info(string $snowflakeId): Collection
+    {
+        $snowflakeId = gmp_strval($snowflakeId, 2);
+        $len = strlen($snowflakeId);
+        $sequenceStart = $len < $this->workerIdShift ? 0 : $len - $this->workerIdShift;
+        $workerStart = $len < $this->dataCenterIdShift ? 0 : $len - $this->dataCenterIdShift;
+        $timeStart = $len < $this->timestampLeftShift ? 0 : $len - $this->timestampLeftShift;
+        $sequence = substr($snowflakeId, $sequenceStart, $len);
+        $workerId = $sequenceStart == 0 ? 0 : substr($snowflakeId, $workerStart, $sequenceStart);
+        $dataCenterId = $workerStart == 0 ? 0 : substr($snowflakeId, $timeStart, $workerStart);
+        $time = $timeStart == 0 ? 0 : substr($snowflakeId, 0, $timeStart);
+        $items = collect(['snowflake_id' => $snowflakeId]);
+        $items->put('sequence', gmp_init($sequence));
+        $items->put('worker_id', gmp_init($workerId));
+        $items->put('data_center_id', gmp_init($dataCenterId));
+        $items->put('datetime', Carbon::createFromTimestampMs(bcadd(gmp_init($time), $this->twEpoch->getTimestampMs())));
+        return $items;
+    }
+
     private string $lastTimestampKey = 'MCTS:SF:LT';
 
     /**
      * 上次生成ID的时间截
      */
-    private function getLastTimestamp(): ?int
+    private function getLastTimestamp(): ?Carbon
     {
         return Cache::rememberForever($this->lastTimestampKey, function () {
-            return -1;
+            return null;
         });
     }
 
-    private function setLastTimestamp(int $timestamp): void
+    private function setLastTimestamp(Carbon $timestamp): self
     {
         Cache::forever($this->lastTimestampKey, $timestamp);
+        return $this;
     }
 
     private string $sequenceKey = 'MCTS:SF:SQ';
 
     /**
      * 毫秒内序列(0~4095)
+     * @param Carbon $tts
      * @return int
      */
-    private function getSequence(): int
+    private function getSequence(Carbon $tts): int
     {
-        $tts = Carbon::now()->addMicroseconds();
+        $tts = $tts->addMicroseconds();
         $sequence = Cache::remember($this->sequenceKey, $tts, function () {
             return -1;
         });
@@ -170,13 +281,13 @@ final class Snowflake
 
     /**
      * 阻塞到下一个毫秒，直到获得新的时间戳
-     * @param int $lastTimestamp 上次生成ID的时间截
-     * @return int 当前时间戳
+     * @param Carbon $lastTimestamp 上次生成ID的时间截
+     * @return Carbon 当前时间戳
      */
-    protected function tilNextMillis(int $lastTimestamp): int
+    protected function tilNextMillis(Carbon $lastTimestamp): Carbon
     {
         $timestamp = $this->timeGen();
-        while ($timestamp <= $lastTimestamp) {
+        while ($timestamp->lte($lastTimestamp)) {
             $timestamp = $this->timeGen();
         }
         return $timestamp;
@@ -184,11 +295,11 @@ final class Snowflake
 
     /**
      * 返回以毫秒为单位的当前时间
-     * @return int 当前时间(毫秒)
+     * @return Carbon 当前时间(毫秒)
      */
-    protected function timeGen(): int
+    protected function timeGen(): Carbon
     {
-        return microtime(true) * 1000;
+        return Carbon::now();
     }
 
     protected function leftShift(int $a, int $b): string

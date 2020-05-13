@@ -16,6 +16,12 @@ use Illuminate\Support\Facades\Facade;
  * Class Snowflake
  *
  * @method static string next()
+ * @method static \MuCTS\Laravel\Snowflake\Snowflake setTwEpoch($twEpoch)
+ * @method static \MuCTS\Laravel\Snowflake\Snowflake setWorkerIdBits(?int $workerIdBits)
+ * @method static \MuCTS\Laravel\Snowflake\Snowflake setDataCenterIdBits(?int $dataCenterIdBits)
+ * @method static \MuCTS\Laravel\Snowflake\Snowflake setSequenceBits(?int $sequenceBits)
+ * @method static \MuCTS\Laravel\Snowflake\Snowflake setWorkerId(?int $workerId)
+ * @method static \MuCTS\Laravel\Snowflake\Snowflake setDataCenterId(?int $dataCenterId)
  * @package MuCTS\Laravel\Snowflake\Facades
  */
 class Snowflake extends Facade
