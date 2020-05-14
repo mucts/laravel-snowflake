@@ -21,7 +21,7 @@ composer require "mucts/laravel-snowflake"
 
 ```
 
-##Usage
+## Usage
 
 ### Generate snowflake identifier
 ```php
