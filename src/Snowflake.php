@@ -268,7 +268,7 @@ final class Snowflake
      */
     private function getSequence(Carbon $tts): int
     {
-        $key = $this->sequenceKey . $tts->millisecond;
+        $key = $this->sequenceKey . $tts->timestamp . $tts->millisecond;
         $sequence = Cache::remember($key, 1, function () {
             return -1;
         });
