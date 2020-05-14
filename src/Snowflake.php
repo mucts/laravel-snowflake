@@ -259,7 +259,7 @@ final class Snowflake
         return $this;
     }
 
-    private string $sequenceKey = 'MCTS:SF:SQ';
+    private string $sequenceKey = 'MCTS:SF:SQ:';
 
     /**
      * 毫秒内序列(0~4095)
@@ -268,12 +268,12 @@ final class Snowflake
      */
     private function getSequence(Carbon $tts): int
     {
-        $tts = $tts->addMicroseconds();
-        $sequence = Cache::remember($this->sequenceKey, $tts, function () {
+        $key = $this->sequenceKey . $tts->millisecond;
+        $sequence = Cache::remember($key, 1, function () {
             return -1;
         });
         $sequence = ($sequence + 1) & $this->sequenceMask;
-        Cache::put($this->sequenceKey, $sequence, $tts);
+        Cache::put($key, $sequence, 1);
         return $sequence;
     }
 
