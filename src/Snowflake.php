@@ -113,6 +113,8 @@ final class Snowflake
     {
         $this->workerIdBits = $workerIdBits ?? 5;
         $this->maxWorkerId = -1 ^ (-1 << $this->workerIdBits);
+        $this->updateDataCenterIdShift();
+        $this->updateTimestampLeftShift();
         return $this;
     }
 
@@ -126,6 +128,7 @@ final class Snowflake
     {
         $this->dataCenterIdBits = $dataCenterIdBits ?? 5;
         $this->maxDataCenterId = -1 ^ (-1 << $this->dataCenterIdBits);
+        $this->updateTimestampLeftShift();
         return $this;
     }
 
@@ -139,10 +142,24 @@ final class Snowflake
     {
         $this->sequenceBits = $sequenceBits ?? 12;
         $this->workerIdShift = $this->sequenceBits;
-        $this->dataCenterIdShift = $this->sequenceBits + $this->workerIdBits;
-        $this->timestampLeftShift = $this->sequenceBits + $this->workerIdBits + $this->dataCenterIdBits;
         $this->sequenceMask = -1 ^ (-1 << $this->sequenceBits);
+        $this->updateDataCenterIdShift();
+        $this->updateTimestampLeftShift();
         return $this;
+    }
+
+    private function updateDataCenterIdShift(): void
+    {
+        if ($this->sequenceBits && $this->workerIdBits) {
+            $this->dataCenterIdShift = $this->sequenceBits + $this->workerIdBits;
+        }
+    }
+
+    private function updateTimestampLeftShift(): void
+    {
+        if ($this->sequenceBits && $this->workerIdBits && $this->dataCenterIdBits) {
+            $this->timestampLeftShift = $this->sequenceBits + $this->workerIdBits + $this->dataCenterIdBits;
+        }
     }
 
     /**
@@ -177,7 +194,16 @@ final class Snowflake
         return $this;
     }
 
-    private string $lockKey = 'MCTS:SF:LOCK';
+    /**
+     * get Cache key
+     *
+     * @param mixed $param
+     * @return string
+     */
+    private function getCacheKey($param): string
+    {
+        return 'mcts:sf:' . substr(md5(json_encode([__CLASS__, $param, $this->dataCenterId, $this->workerId])), -5);
+    }
 
     /**
      * 获得下一个ID (该方法是线程安全的)
@@ -186,13 +212,13 @@ final class Snowflake
      */
     public function next(): ?string
     {
-        return Cache::lock($this->lockKey)->get(function () {
+        return Cache::lock($this->getCacheKey('lock'))->get(function () {
             $timestamp = $this->timeGen();
 
             // 如果当前时间小于上一次ID生成的时间戳，说明系统时钟回退过这个时候应当抛出异常
             if ($timestamp->lt($this->getLastTimestamp())) {
                 throw new Exception(
-                    sprintf("Clock moved backwards.  Refusing to generate id for %d milliseconds", $this->getLastTimestamp() - $timestamp));
+                    sprintf("Clock moved backwards.  Refusing to generate id for %d milliseconds", $this->getLastTimestamp()->diffInMilliseconds($timestamp)));
             }
 
             // 如果是同一时间生成的，则进行毫秒内序列
@@ -240,26 +266,21 @@ final class Snowflake
         return $items;
     }
 
-    private string $lastTimestampKey = 'MCTS:SF:LT';
-
     /**
      * 上次生成ID的时间截
      */
     private function getLastTimestamp(): ?Carbon
     {
-        Cache::forget($this->lastTimestampKey);
-        return Cache::rememberForever($this->lastTimestampKey, function () {
+        return Cache::rememberForever($this->getCacheKey('last timestamp'), function () {
             return null;
         });
     }
 
     private function setLastTimestamp(Carbon $timestamp): self
     {
-        Cache::forever($this->lastTimestampKey, $timestamp);
+        Cache::forever($this->getCacheKey('last timestamp'), $timestamp);
         return $this;
     }
-
-    private string $sequenceKey = 'MCTS:SF:SQ:';
 
     /**
      * 毫秒内序列(0~4095)
@@ -268,7 +289,7 @@ final class Snowflake
      */
     private function getSequence(Carbon $tts): int
     {
-        $key = $this->sequenceKey . $tts->timestamp . $tts->millisecond;
+        $key = $this->getCacheKey([$tts->timestamp, $tts->millisecond]);
         $sequence = Cache::remember($key, 1, function () {
             return -1;
         });
