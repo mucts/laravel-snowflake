@@ -34,37 +34,37 @@ final class Snowflake
     /** @var Carbon 开始时间截 (2020-01-01) */
     private Carbon $twEpoch;
 
-    /** 机器id所占的位数 */
+    /** @var int 机器id所占的位数 */
     private int $workerIdBits;
 
-    /** 数据标识id所占的位数 */
+    /** @var int 数据标识id所占的位数 */
     private int $dataCenterIdBits;
 
-    /** 支持的最大机器id，结果是31 (这个移位算法可以很快的计算出几位二进制数所能表示的最大十进制数) */
+    /** @var int 支持的最大机器id，结果是31 (这个移位算法可以很快的计算出几位二进制数所能表示的最大十进制数) */
     private int $maxWorkerId;
 
-    /** 支持的最大数据标识id，结果是31 */
+    /** @var int 支持的最大数据标识id，结果是31 */
     private int $maxDataCenterId;
 
-    /** 序列在id中占的位数 */
+    /** @var int 序列在id中占的位数 */
     private int $sequenceBits;
 
-    /** 机器ID向左移12位 */
+    /** @var int 机器ID向左移12位 */
     private int $workerIdShift;
 
-    /** 数据标识id向左移17位(12+5) */
+    /** @var int 数据标识id向左移17位(12+5) */
     private int $dataCenterIdShift;
 
-    /** 时间截向左移22位(5+5+12) */
+    /** @var int 时间截向左移22位(5+5+12) */
     private int $timestampLeftShift;
 
-    /** 生成序列的掩码，这里为4095 (0b111111111111=0xfff=4095) */
+    /** @var int 生成序列的掩码，这里为4095 (0b111111111111=0xfff=4095) */
     private int $sequenceMask;
 
-    /** 工作机器ID(0~31) */
+    /** @var int 工作机器ID(0~31) */
     private int $workerId;
 
-    /** 数据中心ID(0~31) */
+    /** @var int 数据中心ID(0~31) */
     private int $dataCenterId;
 
     /**
@@ -107,59 +107,39 @@ final class Snowflake
      * Set worker id bits
      *
      * @param int $workerIdBits
-     * @return $this
+     * @return void
      */
-    public function setWorkerIdBits(?int $workerIdBits): self
+    private function setWorkerIdBits(?int $workerIdBits): void
     {
         $this->workerIdBits = $workerIdBits ?? 5;
         $this->maxWorkerId = -1 ^ (-1 << $this->workerIdBits);
-        $this->updateDataCenterIdShift();
-        $this->updateTimestampLeftShift();
-        return $this;
     }
 
     /**
      * Set data center id bits
      *
      * @param int|null $dataCenterIdBits
-     * @return $this
+     * @return void
      */
-    public function setDataCenterIdBits(?int $dataCenterIdBits): self
+    private function setDataCenterIdBits(?int $dataCenterIdBits): void
     {
         $this->dataCenterIdBits = $dataCenterIdBits ?? 5;
         $this->maxDataCenterId = -1 ^ (-1 << $this->dataCenterIdBits);
-        $this->updateTimestampLeftShift();
-        return $this;
     }
 
     /**
      * Set sequence bits
      *
      * @param int|null $sequenceBits
-     * @return $this
+     * @return void
      */
-    public function setSequenceBits(?int $sequenceBits): self
+    private function setSequenceBits(?int $sequenceBits): void
     {
         $this->sequenceBits = $sequenceBits ?? 12;
         $this->workerIdShift = $this->sequenceBits;
         $this->sequenceMask = -1 ^ (-1 << $this->sequenceBits);
-        $this->updateDataCenterIdShift();
-        $this->updateTimestampLeftShift();
-        return $this;
-    }
-
-    private function updateDataCenterIdShift(): void
-    {
-        if ($this->sequenceBits && $this->workerIdBits) {
-            $this->dataCenterIdShift = $this->sequenceBits + $this->workerIdBits;
-        }
-    }
-
-    private function updateTimestampLeftShift(): void
-    {
-        if ($this->sequenceBits && $this->workerIdBits && $this->dataCenterIdBits) {
-            $this->timestampLeftShift = $this->sequenceBits + $this->workerIdBits + $this->dataCenterIdBits;
-        }
+        $this->dataCenterIdShift = $this->sequenceBits + $this->workerIdBits;
+        $this->timestampLeftShift = $this->sequenceBits + $this->workerIdBits + $this->dataCenterIdBits;
     }
 
     /**
