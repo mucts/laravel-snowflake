@@ -88,17 +88,15 @@ final class Snowflake
     /**
      * Set snowflake start epoch carbon
      *
-     * @param Carbon|DateTime|int|string $twEpoch
+     * @param Carbon|int|float|string $twEpoch
      * @return $this
      * @throws InvalidArgumentException
      */
     public function setTwEpoch($twEpoch): self
     {
         try {
-            if ($twEpoch instanceof DateTime) {
-                $twEpoch = Carbon::createFromTimestamp($twEpoch->getTimestamp())->setMillisecond(0);
-            } elseif (is_numeric($twEpoch)) {
-                $twEpoch = Carbon::createFromTimestampMs($twEpoch);
+            if (is_numeric($twEpoch)) {
+                $twEpoch = Carbon::createFromTimestampMs(is_string($twEpoch) ? floatval($twEpoch) : $twEpoch);
             } elseif (!($twEpoch instanceof Carbon)) {
                 $twEpoch = Carbon::parse($twEpoch);
             }
