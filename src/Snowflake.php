@@ -23,7 +23,8 @@ use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use InvalidArgumentException;
+use MuCTS\Laravel\Snowflake\Exceptions\GenerateException;
+use MuCTS\Laravel\Snowflake\Exceptions\InvalidArgumentException;
 
 /**
  * Class Snowflake
@@ -99,8 +100,6 @@ final class Snowflake
             } elseif (!($twEpoch instanceof Carbon)) {
                 $twEpoch = Carbon::parse($twEpoch);
             }
-        } catch (InvalidArgumentException $exception) {
-            throw $exception;
         } catch (Exception $exception) {
             throw new InvalidArgumentException(sprintf('This\'s not a valid datetime format,exception message:%s',
                 $exception->getMessage()), $exception->getCode(), $exception->getPrevious());
@@ -162,7 +161,7 @@ final class Snowflake
     {
         $this->workerId = $workerId ?? 1;
         if ($this->workerId > $this->maxWorkerId || $this->workerId < 0) {
-            throw new Exception(sprintf('worker Id can\'t be greater than %d or less than 0', $this->maxWorkerId));
+            throw new InvalidArgumentException(sprintf('worker Id can\'t be greater than %d or less than 0', $this->maxWorkerId));
         }
         return $this;
     }
@@ -178,7 +177,7 @@ final class Snowflake
     {
         $this->dataCenterId = $dataCenterId ?? 1;
         if ($this->dataCenterId > $this->maxDataCenterId || $this->dataCenterId < 0) {
-            throw new Exception(sprintf('data center Id can\'t be greater than %d or less than 0', $this->maxDataCenterId));
+            throw new InvalidArgumentException(sprintf('data center Id can\'t be greater than %d or less than 0', $this->maxDataCenterId));
         }
         return $this;
     }
@@ -206,7 +205,7 @@ final class Snowflake
 
             // 如果当前时间小于上一次ID生成的时间戳，说明系统时钟回退过这个时候应当抛出异常
             if ($timestamp->lt($this->getLastTimestamp())) {
-                throw new Exception(
+                throw new GenerateException(
                     sprintf("Clock moved backwards.  Refusing to generate id for %d milliseconds", $this->getLastTimestamp()->diffInMilliseconds($timestamp)));
             }
 
@@ -229,7 +228,7 @@ final class Snowflake
             return gmp_strval(gmp_or(gmp_or(gmp_or($gmpTimestamp, $gmpDataCenterId), $gmpWorkerId), $gmpSequence));
         });
         if (!is_string($id)) {
-            throw new Exception('Failure to generate snowflakes id due to concurrent locking.');
+            throw new GenerateException('Failure to generate snowflakes id due to concurrent locking.');
         }
         return $id;
     }
@@ -239,6 +238,7 @@ final class Snowflake
      *
      * @param string $snowflakeId
      * @return Collection
+     * @throws InvalidArgumentException
      */
     public function info(string $snowflakeId): Collection
     {
