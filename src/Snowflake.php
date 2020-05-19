@@ -24,6 +24,7 @@ use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use InvalidArgumentException;
 
 /**
  * Class Snowflake
@@ -89,15 +90,26 @@ final class Snowflake
      *
      * @param Carbon|DateTime|int|string $twEpoch
      * @return $this
+     * @throws InvalidArgumentException
      */
     public function setTwEpoch($twEpoch): self
     {
-        if ($twEpoch instanceof DateTime) {
-            $twEpoch = Carbon::createFromTimestamp($twEpoch->getTimestamp())->setMillisecond(0);
-        } elseif (is_int($twEpoch)) {
-            $twEpoch = Carbon::createFromTimestampMs($twEpoch);
-        } elseif (is_string($twEpoch)) {
-            $twEpoch = Carbon::parse($twEpoch);
+        try {
+            if ($twEpoch instanceof DateTime) {
+                $twEpoch = Carbon::createFromTimestamp($twEpoch->getTimestamp())->setMillisecond(0);
+            } elseif (is_numeric($twEpoch)) {
+                $twEpoch = Carbon::createFromTimestampMs($twEpoch);
+            } elseif (!($twEpoch instanceof Carbon)) {
+                $twEpoch = Carbon::parse($twEpoch);
+            }
+        } catch (InvalidArgumentException $exception) {
+            throw $exception;
+        } catch (Exception $exception) {
+            throw new InvalidArgumentException(sprintf('This\'s not a valid datetime format,exception message:%s',
+                $exception->getMessage()), $exception->getCode(), $exception->getPrevious());
+        }
+        if (Carbon::now()->lt($twEpoch)) {
+            throw new InvalidArgumentException('The time of setting must not be greater than the current time.');
         }
         $this->twEpoch = $twEpoch;
         return $this;
@@ -229,6 +241,9 @@ final class Snowflake
      */
     public function info(string $snowflakeId): Collection
     {
+        if (strlen($snowflakeId) == 0 || !is_numeric($snowflakeId) || strpos($snowflakeId, '.')) {
+            throw new InvalidArgumentException(sprintf('%s is not a valid snowflake number', $snowflakeId));
+        }
         $snowflakeId = gmp_strval($snowflakeId, 2);
         $len = strlen($snowflakeId);
         $sequenceStart = $len < $this->workerIdShift ? 0 : $len - $this->workerIdShift;
