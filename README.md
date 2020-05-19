@@ -3,6 +3,10 @@
 > This Laravel package to generate 64 bit identifier like the snowflake within Twitter.
 
 [![Build Status](https://travis-ci.org/mucts/laravel-snowflake.svg?branch=master)](https://travis-ci.org/mucts/laravel-snowflake)
+[![Latest Stable Version](https://poser.pugx.org/mucts/laravel-snowflake/v/stable.svg)](https://packagist.org/packages/mucts/laravel-snowflake) 
+[![Total Downloads](https://poser.pugx.org/mucts/laravel-snowflake/downloads.svg)](https://packagist.org/packages/mucts/laravel-snowflake) 
+[![Latest Unstable Version](https://poser.pugx.org/mucts/laravel-snowflake/v/unstable.svg)](https://packagist.org/packages/mucts/laravel-snowflake) 
+[![License](https://poser.pugx.org/mucts/laravel-snowflake/license.svg)](https://packagist.org/packages/mucts/laravel-snowflake)
 
 ## Installation
 
