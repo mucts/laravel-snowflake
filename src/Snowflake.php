@@ -19,7 +19,6 @@
 
 namespace MuCTS\Laravel\Snowflake;
 
-use DateTime;
 use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -200,9 +199,9 @@ final class Snowflake
      * @return string
      * @throws Exception
      */
-    public function next(): ?string
+    public function next(): string
     {
-        return Cache::lock($this->getCacheKey('lock'))->get(function () {
+        $id = Cache::lock($this->getCacheKey('lock'))->get(function () {
             $timestamp = $this->timeGen();
 
             // 如果当前时间小于上一次ID生成的时间戳，说明系统时钟回退过这个时候应当抛出异常
@@ -229,6 +228,10 @@ final class Snowflake
 
             return gmp_strval(gmp_or(gmp_or(gmp_or($gmpTimestamp, $gmpDataCenterId), $gmpWorkerId), $gmpSequence));
         });
+        if (!is_string($id)) {
+            throw new Exception('Failure to generate snowflakes id due to concurrent locking.');
+        }
+        return $id;
     }
 
     /**
