@@ -1,15 +1,16 @@
+<p align="center"><img src="https://images.mucts.com/image/mcts.png" width="400"></p>
+<p align="center">
+    <a href="https://scrutinizer-ci.com/g/mucts/laravel-snowflake"><img src="https://scrutinizer-ci.com/g/mucts/laravel-snowflake/badges/build.png" alt="Build Status"></a>
+    <a href="https://scrutinizer-ci.com/g/mucts/laravel-snowflake"><img src="https://scrutinizer-ci.com/g/mucts/laravel-snowflake/badges/code-intelligence.svg" alt="Code Intelligence Status"></a>
+    <a href="https://scrutinizer-ci.com/g/mucts/laravel-snowflake"><img src="https://scrutinizer-ci.com/g/mucts/laravel-snowflake/badges/quality-score.png" alt="Scrutinizer Code Quality"></a>
+    <a href="https://packagist.org/packages/mucts/laravel-snowflake"><img src="https://poser.pugx.org/mucts/laravel-snowflake/d/total.svg" alt="Total Downloads"></a>
+    <a href="https://packagist.org/packages/mucts/laravel-snowflake"><img src="https://poser.pugx.org/mucts/laravel-snowflake/v/stable.svg" alt="Latest Stable Version"></a>
+    <a href="https://packagist.org/packages/mucts/laravel-snowflake"><img src="https://poser.pugx.org/mucts/laravel-snowflake/license.svg" alt="License"></a>
+</p>
+
 # Laravel Snowflake
 
 > This Laravel package to generate 64 bit identifier like the snowflake within Twitter.
-
-
-[![Build Status](https://scrutinizer-ci.com/g/mucts/laravel-snowflake/badges/build.png)](https://scrutinizer-ci.com/g/mucts/laravel-snowflake)
-[![Code Intelligence Status](https://scrutinizer-ci.com/g/mucts/laravel-snowflake/badges/code-intelligence.svg)](https://scrutinizer-ci.com/g/mucts/laravel-snowflake)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/mucts/laravel-snowflake/badges/quality-score.png)](https://scrutinizer-ci.com/g/mucts/laravel-snowflake)
-[![Latest Stable Version](https://poser.pugx.org/mucts/laravel-snowflake/v/stable.svg)](https://packagist.org/packages/mucts/laravel-snowflake) 
-[![Total Downloads](https://poser.pugx.org/mucts/laravel-snowflake/downloads.svg)](https://packagist.org/packages/mucts/laravel-snowflake) 
-[![Latest Unstable Version](https://poser.pugx.org/mucts/laravel-snowflake/v/unstable.svg)](https://packagist.org/packages/mucts/laravel-snowflake) 
-[![License](https://poser.pugx.org/mucts/laravel-snowflake/license.svg)](https://packagist.org/packages/mucts/laravel-snowflake)
 
 ## Installation
 
