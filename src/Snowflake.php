@@ -23,6 +23,7 @@ use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use MuCTS\Laravel\Snowflake\Exceptions\GenerateException;
 use MuCTS\Laravel\Snowflake\Exceptions\InvalidArgumentException;
 
@@ -57,7 +58,7 @@ final class Snowflake
     private int $dataCenterIdShift;
 
     /** @var int 时间截向左移22位(5+5+12) */
-    private int $timestampLeftShift;
+    private int $timestampShift;
 
     /** @var int 生成序列的掩码，这里为4095 (0b111111111111=0xfff=4095) */
     private int $sequenceMask;
@@ -147,7 +148,7 @@ final class Snowflake
         $this->workerIdShift = $this->sequenceBits;
         $this->sequenceMask = -1 ^ (-1 << $this->sequenceBits);
         $this->dataCenterIdShift = $this->sequenceBits + $this->workerIdBits;
-        $this->timestampLeftShift = $this->sequenceBits + $this->workerIdBits + $this->dataCenterIdBits;
+        $this->timestampShift = $this->sequenceBits + $this->workerIdBits + $this->dataCenterIdBits;
     }
 
     /**
@@ -220,7 +221,7 @@ final class Snowflake
             //上次生成ID的时间截
             $this->setLastTimestamp($timestamp);
 
-            $gmpTimestamp = gmp_init($this->leftShift($timestamp->diffInMilliseconds($this->twEpoch), $this->timestampLeftShift));
+            $gmpTimestamp = gmp_init($this->leftShift($timestamp->diffInMilliseconds($this->twEpoch), $this->timestampShift));
             $gmpDataCenterId = gmp_init($this->leftShift($this->dataCenterId, $this->dataCenterIdShift));
             $gmpWorkerId = gmp_init($this->leftShift($this->workerId, $this->workerIdShift));
             $gmpSequence = gmp_init($sequence);
@@ -243,23 +244,41 @@ final class Snowflake
     public function info(string $snowflakeId): Collection
     {
         if (strlen($snowflakeId) == 0 || !is_numeric($snowflakeId) || strpos($snowflakeId, '.')) {
-            throw new InvalidArgumentException(sprintf('%s is not a valid snowflake number', $snowflakeId));
+            throw new InvalidArgumentException(sprintf('%s is not a valid snowflake id', $snowflakeId));
         }
         $snowflakeId = gmp_strval($snowflakeId, 2);
         $len = strlen($snowflakeId);
-        $sequenceStart = $len < $this->workerIdShift ? 0 : $len - $this->workerIdShift;
-        $workerStart = $len < $this->dataCenterIdShift ? 0 : $len - $this->dataCenterIdShift;
-        $timeStart = $len < $this->timestampLeftShift ? 0 : $len - $this->timestampLeftShift;
-        $sequence = substr($snowflakeId, $sequenceStart);
-        $workerId = $sequenceStart == 0 ? 0 : substr($snowflakeId, $workerStart, $sequenceStart - $workerStart);
-        $dataCenterId = $workerStart == 0 ? 0 : substr($snowflakeId, $timeStart, $workerStart - $timeStart);
-        $time = $timeStart == 0 ? 0 : substr($snowflakeId, 0, $timeStart);
-        $items = collect(['snowflake_id' => gmp_strval('0b' . $snowflakeId)]);
-        $items->put('sequence', gmp_intval(gmp_init('0b' . $sequence)));
-        $items->put('worker_id', gmp_intval(gmp_init('0b' . $workerId)));
-        $items->put('data_center_id', gmp_intval(gmp_init('0b' . $dataCenterId)));
-        $items->put('datetime', $this->twEpoch->clone()->addMilliseconds(gmp_intval(gmp_init('0b' . $time))));
-        return $items;
+        $items = collect([
+            'snowflake_id' => 0,
+            'sequence' => 0,
+            'worker_id' => 0,
+            'data_center_id' => 0,
+            'timestamp' => 0
+        ])->map(function ($value, $key) use ($len, $snowflakeId) {
+            $shift = $this->getData(Str::camel($key) . 'Shift', 0);
+            if ($len < $shift) {
+                throw new InvalidArgumentException(sprintf('\'%s\' is not valid snowflake id.', strval('0b' . $snowflakeId)));
+            }
+            $bits = $this->getData(Str::camel($key) . 'Bits', $len - $shift);
+            return gmp_intval(gmp_init('0b' . substr($snowflakeId, $len - $shift - $bits ?? 0, $bits)));
+        });
+        return $items->put('datetime', $this->twEpoch->clone()->addMilliseconds($items->get('timestamp', 0)));
+    }
+
+    /**
+     * 获取配置信息
+     *
+     * @param string $name
+     * @param int $default
+     * @return int
+     */
+    private function getData(string $name, int $default = 0): int
+    {
+        $name = Str::camel($name);
+        if (property_exists($this, $name)) {
+            return intval($this->{$name});
+        }
+        return $default;
     }
 
     /**
