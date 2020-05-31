@@ -27,7 +27,7 @@
 
 ### Laravel Installation
 ```
-composer require "mucts/laravel-snowflake"
+composer require mucts/laravel-snowflake
 
 ```
 
